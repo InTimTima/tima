@@ -3,8 +3,9 @@ import * as THREE from 'three'
 import { CSS3DObject, CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js'
 import { audio } from '../audio'
 import { items, navIdFromItem, type Lang } from '../content'
+import { closeDetail, getDetail, openDetail, subscribeDetail } from '../detail'
 import { applyLang, CARD_COUNT, createCard } from './cards'
-import { registerSeeker, setActiveNav } from '../travel'
+import { registerSeeker, setActiveNav, goToIndex } from '../travel'
 
 type SpiralSceneProps = {
   lang: Lang
@@ -428,7 +429,26 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       const el = createCard(item, langRef.current)
       const object = new CSS3DObject(el)
       cssScene.add(object)
-      return { object, el, item, faceS: 0, focused: false }
+
+      const onActivate = (event: Event) => {
+        const target = event.target
+        if (target instanceof Element && target.closest('a, button')) return
+        event.preventDefault()
+        void audio.unlock()
+        if (!el.classList.contains('is-focus')) {
+          const index = items.findIndex((entry) => entry.id === item.id)
+          if (index >= 0) goToIndex(index)
+          return
+        }
+        audio.navPing()
+        openDetail(item)
+      }
+      el.addEventListener('click', onActivate)
+      el.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') onActivate(event)
+      })
+
+      return { object, el, item, faceS: 0, focused: false, onActivate }
     })
 
     let width = 0
@@ -454,6 +474,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
     let touching = false
     let seekTo: number | null = null
     let parked = false
+    let detailOpen = false
     let visible = true
     let slowFrames = 0
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 }
@@ -463,9 +484,21 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       parked = false
     }
 
+    const unsubDetail = subscribeDetail((item) => {
+      detailOpen = item !== null
+      if (detailOpen) {
+        seekTo = null
+        parked = true
+        vel = 0
+        target = t
+      } else {
+        parked = false
+      }
+    })
+
     const onWheel = (event: WheelEvent) => {
       event.preventDefault()
-      if (touching) return
+      if (touching || detailOpen) return
       cancelSeek()
       void audio.unlock()
       let dy = event.deltaY
@@ -482,6 +515,10 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       touching = false
     }
     const onTouchMove = (event: TouchEvent) => {
+      if (detailOpen) {
+        event.preventDefault()
+        return
+      }
       const y = event.touches[0]?.clientY ?? touchY
       cancelSeek()
       void audio.unlock()
@@ -492,6 +529,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       event.preventDefault()
     }
     const onKey = (event: KeyboardEvent) => {
+      if (detailOpen) return
       if (event.key === 'ArrowDown' || event.key === 'PageDown') {
         cancelSeek()
         target += 0.75
@@ -572,12 +610,15 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
           target = t
         }
         user = 1
-      } else {
+      } else if (!detailOpen) {
         if (!reduce && !parked && user < 0.12) target += dt * 0.035
         user *= 0.991
         const prev = t
         t += (target - t) * (1 - Math.exp(-dt * 1.25))
         vel = (t - prev) / Math.max(dt, 0.0001)
+      } else {
+        vel *= 0.85
+        target = t
       }
 
       const speed = Math.min(Math.abs(vel), 8)
@@ -646,14 +687,17 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
         const z = -offset * Z_STEP - 24
 
         node.faceS += (near - node.faceS) * 0.045
-        node.object.position.set(x, y, z)
+        const opening = detailOpen && getDetail()?.id === node.item.id
+        if (!opening) {
+          node.object.position.set(x, y, z)
+        }
 
         const opacity =
           wrapFade *
           (1 - pass) *
           (1 - warp * 0.35) *
           (0.32 + 0.68 * Math.max(node.faceS, 0.28))
-        const hidden = opacity < 0.05
+        const hidden = opacity < 0.05 && !opening
         const focused = !hidden && node.faceS > 0.58 && warp < 0.45
         if (focused && !node.focused) flash = 1
         node.focused = focused
@@ -665,23 +709,29 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
         }
 
         if (!hidden) {
-          dummy.position.set(x, y, z)
-          dummy.lookAt(0, 0, z)
+          dummy.position.copy(node.object.position)
+          dummy.lookAt(0, 0, node.object.position.z)
           qWall.copy(dummy.quaternion)
           dummy.lookAt(camera.position)
           qCam.copy(dummy.quaternion)
-          qTarget.slerpQuaternions(qWall, qCam, node.faceS * 0.72)
-          node.object.quaternion.rotateTowards(qTarget, dt * 1.65)
-          const scale = THREE.MathUtils.lerp(0.42, 1.02, node.faceS) * (1 - warp * 0.18)
-          node.object.scale.setScalar(scale)
-
-          const nextOpacity = clamp(opacity, 0, 1).toFixed(3)
-          if (el.dataset.o !== nextOpacity) {
-            el.dataset.o = nextOpacity
-            el.style.opacity = nextOpacity
+          qTarget.slerpQuaternions(qWall, qCam, opening ? 1 : node.faceS * 0.72)
+          node.object.quaternion.rotateTowards(qTarget, dt * (opening ? 4 : 1.65))
+          const scaleBase = THREE.MathUtils.lerp(0.42, 1.02, node.faceS) * (1 - warp * 0.18)
+          if (opening) {
+            node.object.position.lerp(new THREE.Vector3(0, 0, -320), Math.min(1, dt * 5))
+            node.object.scale.setScalar(THREE.MathUtils.lerp(node.object.scale.x, 1.45, Math.min(1, dt * 6)))
+            el.style.opacity = '0.12'
+          } else {
+            node.object.scale.setScalar(scaleBase)
+            const nextOpacity = clamp(opacity, 0, 1).toFixed(3)
+            if (el.dataset.o !== nextOpacity) {
+              el.dataset.o = nextOpacity
+              el.style.opacity = nextOpacity
+            }
           }
-          el.style.pointerEvents = focused ? 'auto' : 'none'
-          el.classList.toggle('is-focus', focused)
+          el.style.pointerEvents = focused && !detailOpen ? 'auto' : 'none'
+          el.classList.toggle('is-focus', focused && !detailOpen)
+          el.classList.toggle('is-opening', Boolean(opening))
         }
       }
       setActiveNav(navIdFromItem(nodes[bestI].item))
@@ -704,6 +754,8 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       raf = 0
       visible = false
       unbindSeek()
+      unsubDetail()
+      closeDetail()
       window.removeEventListener('wheel', onWheel)
       root.removeEventListener('touchstart', onTouchStart)
       root.removeEventListener('touchmove', onTouchMove)
@@ -713,7 +765,8 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', onMouse)
       document.removeEventListener('visibilitychange', onVisibility)
-      nodes.forEach(({ object }) => {
+      nodes.forEach(({ object, el, onActivate }) => {
+        el.removeEventListener('click', onActivate)
         object.element.remove()
         cssScene.remove(object)
       })

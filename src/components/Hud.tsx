@@ -3,6 +3,7 @@ import { audio } from '../audio'
 import { indexForNav, nav, profile, t, ui, type NavId } from '../content'
 import { useI18n } from '../i18n'
 import { goToIndex, subscribeNav } from '../travel'
+import { closeDetail } from '../detail'
 
 export function Hud() {
   const { lang, setLang } = useI18n()
@@ -13,17 +14,7 @@ export function Hud() {
   useEffect(() => audio.subscribe(setMuted), [])
 
   useEffect(() => {
-    const kick = () => {
-      void audio.unlock()
-    }
-    window.addEventListener('pointerdown', kick, { once: true })
-    window.addEventListener('wheel', kick, { once: true, passive: true })
-    window.addEventListener('keydown', kick, { once: true })
-    return () => {
-      window.removeEventListener('pointerdown', kick)
-      window.removeEventListener('wheel', kick)
-      window.removeEventListener('keydown', kick)
-    }
+    audio.armAutoplay()
   }, [])
 
   return (
@@ -87,6 +78,7 @@ export function Hud() {
             title={t(item.hint, lang)}
             data-cursor="hover"
             onClick={() => {
+              closeDetail()
               void audio.unlock()
               audio.navPing()
               goToIndex(indexForNav(item.id))

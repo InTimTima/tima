@@ -84,7 +84,6 @@ class CosmicAudio {
   }
 
   async unlock() {
-    if (this.muted) return
     const ctx = this.ensure()
     if (ctx.state === 'suspended') {
       try {
@@ -94,6 +93,27 @@ class CosmicAudio {
       }
     }
     if (!this.started) this.startGraph()
+    this.applyMute()
+  }
+
+  /** Attach one-shot listeners so music starts on first real gesture. */
+  armAutoplay() {
+    const kick = () => {
+      void this.unlock()
+    }
+    const opts: AddEventListenerOptions = { capture: true, passive: true }
+    const once = () => {
+      kick()
+      window.removeEventListener('pointerdown', once, opts)
+      window.removeEventListener('touchstart', once, opts)
+      window.removeEventListener('wheel', once, opts)
+      window.removeEventListener('keydown', once, opts)
+    }
+    window.addEventListener('pointerdown', once, opts)
+    window.addEventListener('touchstart', once, opts)
+    window.addEventListener('wheel', once, opts)
+    window.addEventListener('keydown', once, opts)
+    void this.unlock()
   }
 
   setMotion(speed: number, warp: number) {

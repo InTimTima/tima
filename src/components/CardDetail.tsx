@@ -37,7 +37,10 @@ export function CardDetail() {
     return subscribeDetail((next) => {
       if (next) {
         setItem(next)
-        requestAnimationFrame(() => setVisible(true))
+        setVisible(false)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setVisible(true))
+        })
       } else {
         setVisible(false)
         window.setTimeout(() => setItem(null), 280)

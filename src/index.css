@@ -85,12 +85,18 @@ button {
 }
 
 .spiral__css {
-  z-index: 4;
+  z-index: 6;
   pointer-events: none;
 }
 
 .spiral__css .node {
   pointer-events: auto;
+  cursor: pointer;
+}
+
+.spiral__css .node a,
+.spiral__css .node button {
+  cursor: pointer;
 }
 
 .fx {

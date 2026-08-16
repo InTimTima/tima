@@ -434,16 +434,14 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
         const target = event.target
         if (target instanceof Element && target.closest('a, button')) return
         event.preventDefault()
+        event.stopPropagation()
         void audio.unlock()
-        if (!el.classList.contains('is-focus')) {
-          const index = items.findIndex((entry) => entry.id === item.id)
-          if (index >= 0) goToIndex(index)
-          return
-        }
         audio.navPing()
+        const index = items.findIndex((entry) => entry.id === item.id)
+        if (index >= 0) goToIndex(index)
         openDetail(item)
       }
-      el.addEventListener('click', onActivate)
+      el.addEventListener('pointerup', onActivate)
       el.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') onActivate(event)
       })
@@ -729,7 +727,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
               el.style.opacity = nextOpacity
             }
           }
-          el.style.pointerEvents = focused && !detailOpen ? 'auto' : 'none'
+          el.style.pointerEvents = !detailOpen && opacity > 0.35 ? 'auto' : 'none'
           el.classList.toggle('is-focus', focused && !detailOpen)
           el.classList.toggle('is-opening', Boolean(opening))
         }
@@ -766,7 +764,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       window.removeEventListener('mousemove', onMouse)
       document.removeEventListener('visibilitychange', onVisibility)
       nodes.forEach(({ object, el, onActivate }) => {
-        el.removeEventListener('click', onActivate)
+        el.removeEventListener('pointerup', onActivate)
         object.element.remove()
         cssScene.remove(object)
       })

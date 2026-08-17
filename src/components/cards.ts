@@ -14,10 +14,6 @@ export function applyLang(root: HTMLElement, lang: Lang) {
   setCopy(root, lang)
 }
 
-function openHint() {
-  return `<span class="node__hint" data-en="${ui.openHint.en}" data-ru="${ui.openHint.ru}"></span>`
-}
-
 export function createCard(item: SpiralItem, lang: Lang) {
   const el = document.createElement('article')
   el.className = `node node--${item.kind}`
@@ -31,7 +27,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
       <p class="node__kicker" data-en="${profile.role.en}" data-ru="${profile.role.ru}"></p>
       <h2 data-en="${profile.name.en}" data-ru="${profile.name.ru}"></h2>
       <p class="node__body" data-en="Sites, apps, bots, and games — from idea to launch." data-ru="Сайты, приложения, боты и игры — от идеи до запуска."></p>
-      ${openHint()}
     `
   }
 
@@ -41,7 +36,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
         <img src="${item.src}" alt="${ui.photo.en}" decoding="async" />
         <span class="node__portrait-glow"></span>
       </div>
-      ${openHint()}
     `
   }
 
@@ -50,7 +44,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
       <p class="node__kicker" data-en="${ui.skill.en}" data-ru="${ui.skill.ru}"></p>
       <h3>${item.name}</h3>
       <p class="node__body" data-en="${item.hint.en}" data-ru="${item.hint.ru}"></p>
-      ${openHint()}
     `
   }
 
@@ -67,7 +60,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
       <p class="node__body" data-en="${item.text.en}" data-ru="${item.text.ru}"></p>
       <ul class="node__tags">${item.stack.map((s) => `<li>${s}</li>`).join('')}</ul>
       ${link}
-      ${openHint()}
     `
   }
 
@@ -77,7 +69,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
       <h3 data-en="${ui.aboutTitle.en}" data-ru="${ui.aboutTitle.ru}"></h3>
       <p class="node__body" data-en="${ui.aboutBody.en}" data-ru="${ui.aboutBody.ru}"></p>
       <p class="node__meta" data-en="${profile.location.en} · ${profile.status.en}" data-ru="${profile.location.ru} · ${profile.status.ru}"></p>
-      ${openHint()}
     `
   }
 
@@ -91,7 +82,6 @@ export function createCard(item: SpiralItem, lang: Lang) {
         <a href="mailto:${profile.email}?subject=${encodeURIComponent('Project / Заказ')}&body=${encodeURIComponent('Привет, Тимофей!\n\n')}" data-cursor="hover">${profile.email}</a>
         <a href="${profile.github}" target="_blank" rel="noopener noreferrer" data-cursor="hover">GitHub · InTimTima</a>
       </div>
-      ${openHint()}
     `
   }
 

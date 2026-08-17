@@ -25,6 +25,7 @@ export function Hud() {
           <div>
             <strong>{t(profile.name, lang)}</strong>
             <em>{t(profile.role, lang)}</em>
+            <p className="hud__hint">{t(ui.openHint, lang)}</p>
           </div>
         </div>
 

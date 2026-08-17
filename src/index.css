@@ -156,6 +156,15 @@ button {
   animation: shimmer 2.8s ease-in-out infinite;
 }
 
+.node.is-hot {
+  border-color: rgba(210, 230, 255, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(186, 220, 255, 0.55),
+    0 0 28px rgba(120, 180, 255, 0.55),
+    0 0 70px rgba(100, 140, 255, 0.4),
+    0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
 .node.is-focus::after {
   content: '';
   position: absolute;
@@ -249,9 +258,9 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 18%;
-  filter: saturate(1.12) contrast(1.06);
+  object-fit: contain;
+  object-position: center;
+  background: #050814;
 }
 
 .node__portrait-glow {
@@ -259,9 +268,9 @@ button {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 88%, rgba(80, 40, 160, 0.28), transparent 46%),
-    linear-gradient(180deg, rgba(90, 160, 255, 0.12), transparent 28%, transparent 72%, rgba(8, 6, 24, 0.35));
-  box-shadow: inset 0 0 40px rgba(90, 140, 255, 0.22);
+    radial-gradient(circle at 50% 88%, rgba(80, 40, 160, 0.18), transparent 46%),
+    linear-gradient(180deg, rgba(90, 160, 255, 0.08), transparent 28%, transparent 72%, rgba(8, 6, 24, 0.28));
+  box-shadow: inset 0 0 40px rgba(90, 140, 255, 0.16);
 }
 
 .node--skill {
@@ -279,8 +288,8 @@ button {
   border-radius: 18px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 80% 20%, rgba(45, 212, 191, 0.45), transparent 40%),
-    radial-gradient(circle at 20% 80%, rgba(110, 168, 255, 0.5), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(45, 212, 191, 0.2), transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(110, 168, 255, 0.22), transparent 42%),
     linear-gradient(135deg, #151a33, #2a1648);
 }
 
@@ -288,7 +297,7 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -314,47 +323,6 @@ button {
   color: var(--muted);
 }
 
-.node__hint {
-  display: none;
-  margin-top: 14px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(186, 220, 255, 0.72);
-}
-
-.node.is-focus .node__hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  animation: hint-pulse 1.8s ease-in-out infinite;
-}
-
-.node.is-focus .node__hint::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 12px #fff;
-}
-
-@keyframes hint-pulse {
-  50% { opacity: 0.45; }
-}
-
-.node--photo .node__hint {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  z-index: 2;
-  margin: 0;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(5, 8, 20, 0.55);
-}
-
 .detail {
   position: fixed;
   inset: 0;
@@ -376,7 +344,7 @@ button {
 .detail__card {
   position: relative;
   width: min(520px, 100%);
-  max-height: min(82vh, 720px);
+  max-height: min(86vh, 760px);
   overflow: auto;
   padding: 28px;
   border: 1px solid rgba(186, 220, 255, 0.28);
@@ -400,6 +368,29 @@ button {
   opacity: 1;
 }
 
+.detail__card.is-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.95fr);
+  gap: 22px;
+  align-items: center;
+  width: min(860px, 100%);
+  padding: 24px;
+}
+
+.detail__card.is-side .detail__close {
+  z-index: 2;
+}
+
+.detail__card.is-side .detail__media {
+  order: 2;
+  height: min(64vh, 520px);
+  margin: 0;
+}
+
+.detail__card.is-side .detail__copy {
+  order: 1;
+}
+
 .detail__close {
   position: absolute;
   top: 14px;
@@ -416,22 +407,46 @@ button {
 }
 
 .detail__media {
-  height: 220px;
+  height: min(42vh, 320px);
   margin: -8px 0 18px;
   border-radius: 18px;
   overflow: hidden;
   background: #050814;
+  display: grid;
+  place-items: center;
 }
 
 .detail__media img {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 .detail__card--photo .detail__media {
   height: min(52vh, 420px);
+}
+
+.detail__copy {
+  min-width: 0;
+}
+
+@media (max-width: 780px) {
+  .detail__card.is-side {
+    grid-template-columns: 1fr;
+    width: min(520px, 100%);
+  }
+
+  .detail__card.is-side .detail__media {
+    order: 0;
+    height: min(38vh, 280px);
+    margin: 0 0 14px;
+  }
+
+  .detail__card.is-side .detail__copy {
+    order: 1;
+  }
 }
 
 .detail__kicker {
@@ -635,6 +650,15 @@ button {
   font-style: normal;
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.hud__hint {
+  margin-top: 6px;
+  max-width: 280px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(186, 220, 255, 0.72);
 }
 
 .hud__right {

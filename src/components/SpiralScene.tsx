@@ -429,24 +429,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       const el = createCard(item, langRef.current)
       const object = new CSS3DObject(el)
       cssScene.add(object)
-
-      const onActivate = (event: Event) => {
-        const target = event.target
-        if (target instanceof Element && target.closest('a, button')) return
-        event.preventDefault()
-        event.stopPropagation()
-        void audio.unlock()
-        audio.navPing()
-        const index = items.findIndex((entry) => entry.id === item.id)
-        if (index >= 0) goToIndex(index)
-        openDetail(item)
-      }
-      el.addEventListener('pointerup', onActivate)
-      el.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') onActivate(event)
-      })
-
-      return { object, el, item, faceS: 0, focused: false, onActivate }
+      return { object, el, item, faceS: 0, focused: false }
     })
 
     let width = 0
@@ -475,11 +458,21 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
     let detailOpen = false
     let visible = true
     let slowFrames = 0
+    let pointerStart: { x: number; y: number; time: number } | null = null
+    let hoverId: string | null = null
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 }
 
     const cancelSeek = () => {
       seekTo = null
       parked = false
+    }
+
+    const openNode = (item: (typeof items)[number]) => {
+      void audio.unlock()
+      audio.navPing()
+      const index = items.findIndex((entry) => entry.id === item.id)
+      if (index >= 0) goToIndex(index)
+      openDetail(item)
     }
 
     const unsubDetail = subscribeDetail((item) => {
@@ -494,9 +487,62 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       }
     })
 
+    const pickCardAt = (clientX: number, clientY: number) => {
+      let hit: (typeof nodes)[number] | null = null
+      let hitScore = -1
+      for (const node of nodes) {
+        if (node.el.style.visibility === 'hidden') continue
+        const rect = node.el.getBoundingClientRect()
+        if (rect.width < 8 || rect.height < 8) continue
+        if (
+          clientX < rect.left ||
+          clientX > rect.right ||
+          clientY < rect.top ||
+          clientY > rect.bottom
+        ) {
+          continue
+        }
+        // Prefer the card closest to camera / most in focus among overlaps.
+        const score = node.faceS * 10 + 1 / Math.max(rect.width * rect.height, 1)
+        if (score > hitScore) {
+          hitScore = score
+          hit = node
+        }
+      }
+      return hit
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (detailOpen) return
+      if (event.button !== 0 && event.pointerType === 'mouse') return
+      const target = event.target
+      if (target instanceof Element && target.closest('a, button, .hud__nav, .lang, .sound, .hud__brand, .hud__status, .detail')) return
+      pointerStart = { x: event.clientX, y: event.clientY, time: performance.now() }
+    }
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (detailOpen || !pointerStart) {
+        pointerStart = null
+        return
+      }
+      const start = pointerStart
+      pointerStart = null
+      const dx = event.clientX - start.x
+      const dy = event.clientY - start.y
+      if (dx * dx + dy * dy > 140) return
+      if (performance.now() - start.time > 450) return
+
+      const target = event.target
+      if (target instanceof Element && target.closest('a, button, .hud__nav, .lang, .sound, .hud__brand, .hud__status, .detail')) return
+
+      const hit = pickCardAt(event.clientX, event.clientY)
+      if (hit) openNode(hit.item)
+    }
+
     const onWheel = (event: WheelEvent) => {
       event.preventDefault()
       if (touching || detailOpen) return
+      pointerStart = null
       cancelSeek()
       void audio.unlock()
       let dy = event.deltaY
@@ -517,6 +563,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
         event.preventDefault()
         return
       }
+      pointerStart = null
       const y = event.touches[0]?.clientY ?? touchY
       cancelSeek()
       void audio.unlock()
@@ -542,6 +589,12 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
     const onMouse = (event: MouseEvent) => {
       mouse.tx = (event.clientX / window.innerWidth) * 2 - 1
       mouse.ty = (event.clientY / window.innerHeight) * 2 - 1
+      if (!detailOpen) {
+        const hit = pickCardAt(event.clientX, event.clientY)
+        hoverId = hit?.item.id ?? null
+      } else {
+        hoverId = null
+      }
     }
     const onVisibility = () => {
       visible = !document.hidden
@@ -566,6 +619,8 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       }
     })
 
+    window.addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointerup', onPointerUp)
     window.addEventListener('wheel', onWheel, { passive: false })
     root.addEventListener('touchstart', onTouchStart, { passive: true })
     root.addEventListener('touchmove', onTouchMove, { passive: false })
@@ -686,17 +741,15 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
 
         node.faceS += (near - node.faceS) * 0.045
         const opening = detailOpen && getDetail()?.id === node.item.id
-        if (!opening) {
-          node.object.position.set(x, y, z)
-        }
+        node.object.position.set(x, y, z)
 
         const opacity =
           wrapFade *
           (1 - pass) *
           (1 - warp * 0.35) *
           (0.32 + 0.68 * Math.max(node.faceS, 0.28))
-        const hidden = opacity < 0.05 && !opening
-        const focused = !hidden && node.faceS > 0.58 && warp < 0.45
+        const hidden = opacity < 0.05 || opening
+        const focused = !hidden && !detailOpen && node.faceS > 0.58 && warp < 0.45
         if (focused && !node.focused) flash = 1
         node.focused = focused
 
@@ -707,29 +760,33 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
         }
 
         if (!hidden) {
-          dummy.position.copy(node.object.position)
-          dummy.lookAt(0, 0, node.object.position.z)
+          dummy.position.set(x, y, z)
+          dummy.lookAt(0, 0, z)
           qWall.copy(dummy.quaternion)
           dummy.lookAt(camera.position)
           qCam.copy(dummy.quaternion)
-          qTarget.slerpQuaternions(qWall, qCam, opening ? 1 : node.faceS * 0.72)
-          node.object.quaternion.rotateTowards(qTarget, dt * (opening ? 4 : 1.65))
-          const scaleBase = THREE.MathUtils.lerp(0.42, 1.02, node.faceS) * (1 - warp * 0.18)
-          if (opening) {
-            node.object.position.lerp(new THREE.Vector3(0, 0, -320), Math.min(1, dt * 5))
-            node.object.scale.setScalar(THREE.MathUtils.lerp(node.object.scale.x, 1.45, Math.min(1, dt * 6)))
-            el.style.opacity = '0.12'
-          } else {
-            node.object.scale.setScalar(scaleBase)
-            const nextOpacity = clamp(opacity, 0, 1).toFixed(3)
-            if (el.dataset.o !== nextOpacity) {
-              el.dataset.o = nextOpacity
-              el.style.opacity = nextOpacity
-            }
+          const hoverPull = hoverId === node.item.id && focused ? 0.14 : 0
+          qTarget.slerpQuaternions(qWall, qCam, node.faceS * 0.72)
+          node.object.quaternion.rotateTowards(qTarget, dt * 1.65)
+          const rPull = THREE.MathUtils.lerp(r, r * 0.8, hoverPull)
+          if (hoverPull > 0) {
+            node.object.position.set(
+              Math.cos(angle) * rPull,
+              Math.sin(angle) * rPull * radiusY + Math.sin(time * 0.9 + i) * 6 * near,
+              z,
+            )
           }
-          el.style.pointerEvents = !detailOpen && opacity > 0.35 ? 'auto' : 'none'
-          el.classList.toggle('is-focus', focused && !detailOpen)
-          el.classList.toggle('is-opening', Boolean(opening))
+          const scaleBase = THREE.MathUtils.lerp(0.42, 1.02, node.faceS) * (1 - warp * 0.18)
+          node.object.scale.setScalar(scaleBase * (1 + hoverPull * 0.05))
+          const nextOpacity = clamp(opacity, 0, 1).toFixed(3)
+          if (el.dataset.o !== nextOpacity) {
+            el.dataset.o = nextOpacity
+            el.style.opacity = nextOpacity
+          }
+          el.style.pointerEvents = !detailOpen && opacity > 0.28 ? 'auto' : 'none'
+          el.classList.toggle('is-focus', focused)
+          el.classList.toggle('is-hot', hoverPull > 0)
+          el.classList.toggle('is-opening', false)
         }
       }
       setActiveNav(navIdFromItem(nodes[bestI].item))
@@ -754,6 +811,8 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       unbindSeek()
       unsubDetail()
       closeDetail()
+      window.removeEventListener('pointerdown', onPointerDown)
+      window.removeEventListener('pointerup', onPointerUp)
       window.removeEventListener('wheel', onWheel)
       root.removeEventListener('touchstart', onTouchStart)
       root.removeEventListener('touchmove', onTouchMove)
@@ -763,8 +822,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', onMouse)
       document.removeEventListener('visibilitychange', onVisibility)
-      nodes.forEach(({ object, el, onActivate }) => {
-        el.removeEventListener('pointerup', onActivate)
+      nodes.forEach(({ object }) => {
         object.element.remove()
         cssScene.remove(object)
       })

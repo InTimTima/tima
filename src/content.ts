@@ -51,7 +51,7 @@ export const ui = {
   code: { en: 'Code', ru: 'Код' },
   soundOn: { en: 'Sound on', ru: 'Звук вкл' },
   soundOff: { en: 'Sound off', ru: 'Звук выкл' },
-  openHint: { en: 'Click to open', ru: 'Нажми, чтобы открыть' },
+  openHint: { en: 'Click a card to open it', ru: 'Нажмите на карточку, чтобы открыть' },
   close: { en: 'Close', ru: 'Закрыть' },
   writeMore: { en: 'Details', ru: 'Подробнее' },
 }

@@ -6,6 +6,7 @@ export type NavId = 'info' | 'stack' | 'projects' | 'contact'
 
 export type SpiralItem =
   | { id: string; kind: 'intro'; more?: Copy }
+  | { id: string; kind: 'section'; nav: NavId; title: Copy; subtitle: Copy }
   | { id: string; kind: 'photo'; index: number; src: string; more?: Copy }
   | { id: string; kind: 'skill'; name: string; hint: Copy; more?: Copy }
   | {
@@ -57,13 +58,14 @@ export const ui = {
 }
 
 export const nav: { id: NavId; label: Copy; hint: Copy; targetId: string }[] = [
-  { id: 'info', label: { en: 'Info', ru: 'Инфо' }, hint: { en: 'What I do', ru: 'Чем занимаюсь' }, targetId: 'about' },
-  { id: 'stack', label: { en: 'Stack', ru: 'Стек' }, hint: { en: 'Skills', ru: 'Навыки' }, targetId: 'skill-mobile' },
-  { id: 'projects', label: { en: 'Projects', ru: 'Проекты' }, hint: { en: 'Projects', ru: 'Проекты' }, targetId: 'project-murkot' },
-  { id: 'contact', label: { en: 'Contact', ru: 'Контакты' }, hint: { en: 'Contact', ru: 'Контакты' }, targetId: 'contact' },
+  { id: 'info', label: { en: 'Info', ru: 'Инфо' }, hint: { en: 'What I do', ru: 'Чем занимаюсь' }, targetId: 'section-info' },
+  { id: 'stack', label: { en: 'Stack', ru: 'Стек' }, hint: { en: 'Skills', ru: 'Навыки' }, targetId: 'section-stack' },
+  { id: 'projects', label: { en: 'Projects', ru: 'Проекты' }, hint: { en: 'Projects', ru: 'Проекты' }, targetId: 'section-projects' },
+  { id: 'contact', label: { en: 'Contact', ru: 'Контакты' }, hint: { en: 'Contact', ru: 'Контакты' }, targetId: 'section-contact' },
 ]
 
 export function navIdFromItem(item: SpiralItem): NavId {
+  if (item.kind === 'section') return item.nav
   if (item.kind === 'skill') return 'stack'
   if (item.kind === 'project') return 'projects'
   if (item.kind === 'contact') return 'contact'
@@ -87,6 +89,13 @@ export const items: SpiralItem[] = [
     },
   },
   {
+    id: 'section-info',
+    kind: 'section',
+    nav: 'info',
+    title: { en: 'About me', ru: 'Обо мне' },
+    subtitle: { en: 'Who I am & what I ship', ru: 'Кто я и что делаю' },
+  },
+  {
     id: 'about',
     kind: 'about',
     more: {
@@ -95,6 +104,14 @@ export const items: SpiralItem[] = [
     },
   },
   { id: 'photo-1', kind: 'photo', index: 1, src: '/photos/01.jpg' },
+  {
+    id: 'section-stack',
+    kind: 'section',
+    nav: 'stack',
+    title: { en: 'Skills', ru: 'Навыки' },
+    subtitle: { en: 'Stack & tools I work with', ru: 'Стек и инструменты' },
+  },
+  { id: 'photo-2', kind: 'photo', index: 2, src: '/photos/02.jpg' },
   {
     id: 'skill-mobile',
     kind: 'skill',
@@ -105,7 +122,6 @@ export const items: SpiralItem[] = [
       ru: 'Flutter — плавный UI на iOS, Android и web. Dart — чистая архитектура: модели, сервисы, async-потоки и сборки под сторы.',
     },
   },
-  { id: 'photo-2', kind: 'photo', index: 2, src: '/photos/02.jpg' },
   {
     id: 'skill-games',
     kind: 'skill',
@@ -127,7 +143,6 @@ export const items: SpiralItem[] = [
       ru: 'Python — Telegram-боты, скрипты, небольшие API и автоматизация. SQL — понятные схемы и запросы, которые держатся при росте продукта.',
     },
   },
-  { id: 'photo-4', kind: 'photo', index: 4, src: '/photos/04.jpg' },
   {
     id: 'skill-realtime',
     kind: 'skill',
@@ -138,7 +153,6 @@ export const items: SpiralItem[] = [
       ru: 'Supabase — auth, Postgres, storage и realtime-каналы. WebSocket — сообщения, присутствие и живая синхронизация, как в Murkot.',
     },
   },
-  { id: 'photo-5', kind: 'photo', index: 5, src: '/photos/05.jpg' },
   {
     id: 'skill-ship',
     kind: 'skill',
@@ -149,7 +163,14 @@ export const items: SpiralItem[] = [
       ru: 'Чистая история, превью и прод-деплои — чтобы идеи уходили с ноутбука в интернет.',
     },
   },
-  { id: 'photo-6', kind: 'photo', index: 6, src: '/photos/06.jpg' },
+  {
+    id: 'section-projects',
+    kind: 'section',
+    nav: 'projects',
+    title: { en: 'Projects', ru: 'Проекты' },
+    subtitle: { en: 'Things I built & shipped', ru: 'Что я собрал и запустил' },
+  },
+  { id: 'photo-4', kind: 'photo', index: 4, src: '/photos/04.jpg' },
   {
     id: 'project-murkot',
     kind: 'project',
@@ -182,6 +203,7 @@ export const items: SpiralItem[] = [
     image: '/projects/igroprofi.png',
     href: 'https://igroprofi.ru/',
   },
+  { id: 'photo-5', kind: 'photo', index: 5, src: '/photos/05.jpg' },
   {
     id: 'project-run',
     kind: 'project',
@@ -213,6 +235,14 @@ export const items: SpiralItem[] = [
     image: '/projects/shifer.png',
     href: 'https://shifer.vercel.app',
   },
+  {
+    id: 'section-contact',
+    kind: 'section',
+    nav: 'contact',
+    title: { en: 'Get in touch', ru: 'Как связаться' },
+    subtitle: { en: 'Telegram, email, GitHub', ru: 'Telegram, почта, GitHub' },
+  },
+  { id: 'photo-6', kind: 'photo', index: 6, src: '/photos/06.jpg' },
   {
     id: 'contact',
     kind: 'contact',

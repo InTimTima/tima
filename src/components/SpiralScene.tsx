@@ -472,6 +472,7 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
       audio.navPing()
       const index = items.findIndex((entry) => entry.id === item.id)
       if (index >= 0) goToIndex(index)
+      if (item.kind === 'section') return
       openDetail(item)
     }
 
@@ -776,7 +777,10 @@ export function SpiralScene({ lang }: SpiralSceneProps) {
               z,
             )
           }
-          const scaleBase = THREE.MathUtils.lerp(0.42, 1.02, node.faceS) * (1 - warp * 0.18)
+          const isSection = node.item.kind === 'section'
+          const scaleMin = isSection ? 0.58 : 0.42
+          const scaleMax = isSection ? 1.22 : 1.02
+          const scaleBase = THREE.MathUtils.lerp(scaleMin, scaleMax, node.faceS) * (1 - warp * 0.18)
           node.object.scale.setScalar(scaleBase * (1 + hoverPull * 0.05))
           const nextOpacity = clamp(opacity, 0, 1).toFixed(3)
           if (el.dataset.o !== nextOpacity) {

@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { audio } from '../audio'
 
 function titleFor(item: SpiralItem, lang: 'en' | 'ru') {
+  if (item.kind === 'section') return t(item.title, lang)
   if (item.kind === 'intro') return t(profile.name, lang)
   if (item.kind === 'about') return t(ui.aboutTitle, lang)
   if (item.kind === 'contact') return t(ui.contactTitle, lang)
@@ -15,7 +16,8 @@ function titleFor(item: SpiralItem, lang: 'en' | 'ru') {
 }
 
 function bodyFor(item: SpiralItem, lang: 'en' | 'ru') {
-  if (item.more) return t(item.more, lang)
+  if (item.kind === 'section') return t(item.subtitle, lang)
+  if ('more' in item && item.more) return t(item.more, lang)
   if (item.kind === 'skill') return t(item.hint, lang)
   if (item.kind === 'project') return t(item.text, lang)
   if (item.kind === 'about') return t(ui.aboutBody, lang)

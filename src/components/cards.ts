@@ -19,14 +19,26 @@ export function createCard(item: SpiralItem, lang: Lang) {
   el.className = `node node--${item.kind}`
   el.dataset.kind = item.kind
   el.dataset.id = item.id
-  el.setAttribute('role', 'button')
-  el.tabIndex = 0
+
+  if (item.kind !== 'section') {
+    el.setAttribute('role', 'button')
+    el.tabIndex = 0
+  }
 
   if (item.kind === 'intro') {
     el.innerHTML = `
       <p class="node__kicker" data-en="${profile.role.en}" data-ru="${profile.role.ru}"></p>
       <h2 data-en="${profile.name.en}" data-ru="${profile.name.ru}"></h2>
       <p class="node__body" data-en="Sites, apps, bots, and games — from idea to launch." data-ru="Сайты, приложения, боты и игры — от идеи до запуска."></p>
+    `
+  }
+
+  if (item.kind === 'section') {
+    el.innerHTML = `
+      <p class="node__section-line"></p>
+      <h2 class="node__section-title" data-en="${item.title.en}" data-ru="${item.title.ru}"></h2>
+      <p class="node__section-sub" data-en="${item.subtitle.en}" data-ru="${item.subtitle.ru}"></p>
+      <p class="node__section-line node__section-line--end"></p>
     `
   }
 
